@@ -1,0 +1,26 @@
+name: Merge dev-abc into main
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Merge dev-abc into main
+        run: |
+          git checkout main
+          git pull origin main
+          git merge origin/dev-abc --no-ff -m "Merge dev-abc into main"
+          git push origin main
