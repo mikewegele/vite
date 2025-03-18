@@ -25,5 +25,5 @@ jobs:
           git fetch origin
           git checkout main
           git pull origin main
-          git merge origin/dev-abc --no-ff -m "Merge dev-abc into main"
+          git merge origin/develop --no-ff -m "Merge dev-abc into main"
           git push origin main
