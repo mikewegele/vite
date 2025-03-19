@@ -15,24 +15,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate GitHub App Token
+      - name: Generate App Token
         id: generate_token
         uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.BOT_APP_ID }}
-          private_key: ${{ secrets.BOT_PRIVATE_KEY }}
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
 
       - name: Set up Git
         run: |
-          git config --global user.name "GitHub App"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Authenticate with GitHub App
-        env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
-        run: |
-          echo "machine github.com login x-access-token password $GH_TOKEN" > ~/.netrc
-          chmod 600 ~/.netrc
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch all branches and checkout main
         run: |
@@ -43,6 +36,6 @@ jobs:
 
       - name: Push changes
         env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          APP_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
-          git push https://x-access-token:$GH_TOKEN@github.com/mikewegele/vite.git main
+          git push https://x-access-token:$APP_TOKEN@github.com/mikewegele/vite.git main
