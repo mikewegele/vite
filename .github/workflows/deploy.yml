@@ -1,9 +1,9 @@
-name: Merge dev-abc into main
+name: Merge develop2 into main
 
 on:
   push:
     branches:
-      - develop
+      - develop2
 
 jobs:
   merge:
@@ -12,15 +12,60 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Set up Git
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+      - name: Generate App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
 
-      - name: Merge dev-abc into main
+      - name: Set environment variables
+        run: echo "GITHUB_ACTOR=${{ github.actor }}" >> $GITHUB_ENV
+
+      - name: Set GitHub identity
         run: |
-          git checkout main
-          git pull origin main
-          git merge origin/dev-abc --no-ff -m "Merge dev-abc into main"
-          git push origin main
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global user.name "${GITHUB_ACTOR}"
+
+      - name: Create a Pull Request from develop2 to main
+        id: create_pr
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "title": "Merge develop2 into main",
+              "head": "develop2",
+              "base": "main",
+              "body": "This PR merges develop2 into main."
+            }' \
+            https://api.github.com/repos/${{ github.repository }}/pulls
+
+      - name: Merge Pull Request
+        run: |
+          # Hole PR-URL
+          pr_url=$(curl -X GET \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:develop2&base=main)
+          
+          # Debugging: Ausgabe der Antwort von curl
+          echo "PR Response: $pr_url"
+          
+          # Prüfe, ob ein PR gefunden wurde
+          pr_url=$(echo $pr_url | jq '.[0].url' -r)
+          
+          if [ "$pr_url" == "null" ]; then
+            echo "Kein Pull Request gefunden."
+            exit 1
+          fi
+          
+          # PR mergen
+          curl -X PUT \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{"state": "closed"}' \
+            $pr_url/merge
