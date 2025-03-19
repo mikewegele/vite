@@ -15,7 +15,7 @@ jobs:
         with:
           app_id: ${{ secrets.BOT_APP_ID }}
           private_key: ${{ secrets.BOT_PRIVATE_KEY }}
-          fetch-depth: 0  # Vollständiger Git-Verlauf
+          fetch-depth: 0
 
       - name: Set up Git
         run: |
