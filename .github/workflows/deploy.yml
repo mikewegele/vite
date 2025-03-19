@@ -30,15 +30,30 @@ jobs:
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config --global user.name "${GITHUB_ACTOR}"
 
-      - name: Fetch all branches and checkout main
+      - name: Create a Pull Request from develop2 to main
+        id: create_pr
         run: |
-          git fetch origin
-          git checkout main
-          git pull origin main
-          git merge origin/develop2 --no-ff -m "Merge develop2 into main"
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{
+              "title": "Merge develop2 into main",
+              "head": "develop2",
+              "base": "main",
+              "body": "This PR merges develop2 into main."
+            }' \
+            https://api.github.com/repos/${{ github.repository }}/pulls
 
-      - name: Push changes
-        env:
-          APP_TOKEN: ${{ steps.generate_token.outputs.token }}
+      - name: Merge Pull Request
         run: |
-          git push https://x-access-token:$APP_TOKEN@github.com/mikewegele/vite.git main
+          pr_url=$(curl -X GET \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls?head=${{ github.repository_owner }}:develop2&base=main | jq '.[0].url' -r)
+          
+          curl -X PUT \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{"state": "closed"}' \
+            $pr_url/merge
+
